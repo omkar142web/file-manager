@@ -302,9 +302,20 @@ async function previewFile(path){
 
   if(/\.(png|jpg|jpeg|gif|webp)$/i.test(path)){
     content.innerHTML = `
-      <img src="/preview?path=${encodeURIComponent(path)}"
-             class="w-full h-full object-contain rounded shadow mx-auto">
+    <div id="zoomArea"
+        class="w-full h-full overflow-hidden relative bg-black flex items-center justify-center">
 
+        <img id="zoomImage"
+        src="/preview?path=${encodeURIComponent(path)}"
+        class="rounded shadow select-none"
+        draggable="false"
+        style="
+            max-width:100%;
+            max-height:100%;
+            object-fit:contain;
+            transform-origin:center;
+        ">
+    </div>
     `;
   }
 
@@ -378,6 +389,66 @@ document.addEventListener("keydown", (e) => {
   if(e.key === "Escape") closePreview();
 });
 
+let zoomLevel = 1;
+let posX = 0, posY = 0;
+let isPanning = false;
+let startX = 0, startY = 0;
+
+function applyZoom(){
+  const img = document.getElementById("zoomImage");
+  if(!img) return;
+
+  img.style.transform = `translate(${posX}px, ${posY}px) scale(${zoomLevel})`;
+}
+
+
+/* Zoom Buttons */
+function zoomIn(){
+  zoomLevel += 0.2;
+  applyZoom();
+}
+
+function zoomOut(){
+  zoomLevel = Math.max(0.2, zoomLevel - 0.2);
+  applyZoom();
+}
+
+function resetZoom(){
+  zoomLevel = 1;
+  posX = 0;
+  posY = 0;
+  applyZoom();
+}
+
+document.addEventListener("mousedown", e => {
+  const img = document.getElementById("zoomImage");
+  if(!img) return;
+
+  isPanning = true;
+  startX = e.clientX - posX;
+  startY = e.clientY - posY;
+});
+
+document.addEventListener("mousemove", e => {
+  if(!isPanning) return;
+
+  posX = e.clientX - startX;
+  posY = e.clientY - startY;
+  applyZoom();
+});
+
+document.addEventListener("mouseup", () => isPanning = false);
+
+
+document.addEventListener("wheel", e => {
+  const img = document.getElementById("zoomImage");
+  if(!img) return;
+
+  if(e.deltaY < 0) zoomIn();
+  else zoomOut();
+});
+
+
 </script>
 
 <div id="previewBox"
@@ -399,6 +470,18 @@ document.addEventListener("keydown", (e) => {
             <button onclick="showNext()"
             class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
             Next ➡
+            </button>
+
+            <button onclick="zoomIn()" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+            ➕ Zoom In
+            </button>
+
+            <button onclick="zoomOut()" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+            ➖ Zoom Out
+            </button>
+
+            <button onclick="resetZoom()" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+            🔄 Reset
             </button>
 
             <button onclick="closePreview()"
