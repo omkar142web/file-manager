@@ -17,9 +17,19 @@ def list_items():
     if not os.path.exists(path):
         return jsonify({"error": "Path not found"}), 404
 
-    items = []
+    page = int(request.args.get("page", 1))
+    per_page = 50
+
     try:
-        for name in os.listdir(path):
+        names = os.listdir(path)
+        total = len(names)
+
+        start = (page - 1) * per_page
+        end = start + per_page
+        names = names[start:end]
+
+        items = []
+        for name in names:
             full = os.path.join(path, name)
             items.append({
                 "name": name,
@@ -27,9 +37,18 @@ def list_items():
                 "is_dir": os.path.isdir(full),
                 "size": os.path.getsize(full) if os.path.isfile(full) else None
             })
-        return jsonify({"path": path, "items": items})
+
+        return jsonify({
+            "path": path,
+            "items": items,
+            "page": page,
+            "per_page": per_page,
+            "total": total
+        })
+
     except PermissionError:
         return jsonify({"error": "Access denied"}), 403
+
 
 @app.route("/delete", methods=["POST"])
 def delete_item():
