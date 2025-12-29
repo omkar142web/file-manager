@@ -6,6 +6,10 @@
 </head>
 <div id="breadcrumb" class="mt-4 text-gray-300 text-sm flex flex-wrap gap-2"></div>
 
+<div id="quickAccess"
+     class="mt-2 flex flex-wrap gap-3 text-sm text-blue-400">
+</div>
+
 <body class="bg-gray-900 text-white">
 
 
@@ -315,7 +319,50 @@ function openPreview(path){
 }
 
 
+
+function buildQuickAccess(basePath){
+  let qa = document.getElementById("quickAccess");
+  qa.innerHTML = "";
+
+  let isWindows = basePath.includes("\\");
+
+  let common = [];
+
+  if(isWindows){
+      let drive = basePath.split("\\")[0] + "\\";
+
+      common = [
+        {name:"Desktop", path: drive+"Users\\redmi\\Desktop\\"},
+        {name:"Downloads", path: drive+"Users\\redmi\\Downloads\\"},
+        {name:"Documents", path: drive+"Users\\redmi\\Documents\\"},
+        {name:"Pictures", path: drive+"Users\\redmi\\Pictures\\"},
+        {name:"Videos", path: drive+"Users\\redmi\\Videos\\"}
+      ];
+  }
+  else{
+      common = [
+        {name:"Downloads", path:"/Users/redmi/Downloads"},
+        {name:"New downloads", path:"/Users/redmi/Downloads/# new downloads"},
+        {name:"Coding", path:"/Users/redmi/Downloads/Coding"},
+        {name:"Pictures", path:"/Users/redmi/Pictures"},
+        {name:"Screentshots", path:"/Users/redmi/Pictures/Screenshots"},
+        {name:"Documents", path:"/Users/redmi/Documents"},
+        {name:"Videos", path:"/Users/redmi/Videos"}
+      ];
+  }
+
+  common.forEach(q => {
+      qa.innerHTML += `
+        <span onclick="openPath('${q.path.replace(/\\/g,'\\\\')}')"
+          class="cursor-pointer px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded border border-gray-700">
+          ⭐ ${q.name}
+        </span>
+      `;
+  });
+}
+
 function buildBreadcrumb(fullPath){
+  buildQuickAccess(fullPath);
   let container = document.getElementById("breadcrumb");
   container.innerHTML = "";
 
