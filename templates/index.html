@@ -121,11 +121,42 @@ async function previewFile(path){
 
   content.innerHTML = "Loading...";
 
-  // Image?
   if(/\.(png|jpg|jpeg|gif|webp)$/i.test(path)){
-    content.innerHTML = `<img src="/preview?path=${encodeURIComponent(path)}"
-                            class="max-h-[90%] mx-auto rounded shadow">`;
+    content.innerHTML = `
+      <img src="/preview?path=${encodeURIComponent(path)}"
+             class="w-full h-full object-contain rounded shadow mx-auto">
+
+    `;
   }
+
+  else if(/\.pdf$/i.test(path)){
+  content.innerHTML = `
+    <iframe src="/preview?path=${encodeURIComponent(path)}#zoom=page-fit"
+            class="w-full h-[100%] rounded border-0"></iframe>
+  `;
+}
+
+
+
+  else if(/\.(mp4|webm|avi|mov|mkv)$/i.test(path)){
+    content.innerHTML = `
+      <video controls autoplay class="w-full h-full object-contain rounded">
+        <source src="/preview?path=${encodeURIComponent(path)}">
+        Your browser does not support this video.
+      </video>
+    `;
+  }
+
+  else if(/\.(mp3|wav|m4a)$/i.test(path)){
+  content.innerHTML = `
+    <audio controls autoplay class="w-full mt-4">
+      <source src="/preview?path=${encodeURIComponent(path)}">
+      Your browser does not support audio playback.
+    </audio>
+  `;
+}
+
+
   else {
     const res = await fetch(`/preview?path=${encodeURIComponent(path)}`);
     const text = await res.text();
@@ -136,6 +167,7 @@ async function previewFile(path){
   box.classList.add("flex");
 }
 
+
 function closePreview(){
   const box = document.getElementById("previewBox");
   box.classList.add("hidden");
@@ -145,7 +177,9 @@ function closePreview(){
 
 <div id="previewBox"
      class="fixed inset-0 bg-black/70 hidden items-center justify-center">
-  <div class="bg-gray-900 p-5 rounded-xl w-[80%] h-[80%] overflow-auto">
+  <div class="bg-gray-900 p-5 rounded-xl w-[90%] h-[90%] overflow-hidden flex flex-col">
+
+
     
     <div class="flex justify-between items-center mb-3">
       <h2 class="text-xl font-bold">Preview</h2>
@@ -155,7 +189,8 @@ function closePreview(){
       </button>
     </div>
 
-    <div id="previewContent" class="text-white text-sm"></div>
+    <div id="previewContent" class="text-white text-sm flex-1 overflow-hidden"></div>
+
   </div>
 </div>
 

@@ -59,14 +59,28 @@ def preview():
     if not path or not os.path.exists(path):
         return "Not Found", 404
 
-    # Image / text preview only for now
     try:
-        # Images → return directly
-        if any(path.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".gif", ".webp"]):
+        lower = path.lower()
+
+        # Images
+        if lower.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
             return send_file(path)
 
-        # Text files
-        if any(path.lower().endswith(ext) for ext in [".txt", ".log", ".py", ".json", ".html", ".css", ".js"]):
+        # PDF
+        if lower.endswith(".pdf"):
+            return send_file(path, mimetype="application/pdf")
+
+        # Video
+        if lower.endswith((".mp4", ".webm", ".avi", ".mov", ".mkv")):
+            return send_file(path)
+        
+        # Audio
+        if lower.endswith((".mp3", ".wav", ".m4a")):
+            return send_file(path)
+
+
+        # Text
+        if lower.endswith((".txt", ".log", ".py", ".json", ".html", ".css", ".js")):
             with open(path, "r", errors="ignore") as f:
                 return f.read()
 
@@ -74,6 +88,7 @@ def preview():
 
     except PermissionError:
         return "Access Denied", 403
+
 
 
 if __name__ == "__main__":
