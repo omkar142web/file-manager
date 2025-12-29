@@ -26,6 +26,23 @@
 let currentList = [];
 let currentIndex = -1;
 
+function getIcon(name, isDir){
+  if(isDir) return "📁";
+
+  const ext = name.toLowerCase();
+
+  if(/\.(png|jpg|jpeg|gif|webp|svg)$/.test(ext)) return "🖼️";
+  if(/\.(mp4|webm|avi|mov|mkv)$/.test(ext)) return "🎞️";
+  if(/\.(mp3|wav|m4a)$/.test(ext)) return "🎵";
+  if(ext.endsWith(".pdf")) return "📄";
+  if(/\.(zip|rar|7z)$/.test(ext)) return "🗜️";
+  if(/\.(txt|log|md)$/.test(ext)) return "📝";
+  if(/\.(py|js|html|css|json|cpp|java)$/.test(ext)) return "💻";
+  
+  return "📦";   // default
+}
+
+
 async function loadFiles() {
   let path = document.getElementById("path").value;
 
@@ -54,7 +71,9 @@ currentList = data.items
             : `openPreview('${item.path.replace(/\\/g,'\\\\')}')`}" 
             class="cursor-pointer">
 
-            <p class="font-bold">${item.name}</p>
+            <p class="font-bold break-words whitespace-normal">
+                ${getIcon(item.name, item.is_dir)} ${item.name}
+            </p>
             <p class="text-sm text-gray-400">
             ${item.is_dir ? "📂 Folder" : "📄 File"}
             </p>
@@ -74,9 +93,24 @@ currentList = data.items
 }
 
 function openPath(p){
-  document.getElementById("path").value = p;
+  let input = document.getElementById("path");
+
+  // If Windows and missing drive, add it
+  if(p.includes("\\") && !p.includes(":")){
+      let current = input.value;
+
+      // get drive from current path
+      let drive = current.includes(":")
+        ? current.split("\\")[0]
+        : "C:";
+
+      p = drive + "\\" + p;
+  }
+
+  input.value = p;
   loadFiles();
 }
+
 
 loadFiles();
 
@@ -109,26 +143,64 @@ function buildBreadcrumb(fullPath){
   let container = document.getElementById("breadcrumb");
   container.innerHTML = "";
 
+  let isWindows = fullPath.includes("\\");
   let parts = fullPath.split(/[/\\\\]+/).filter(Boolean);
-  let current = "";
 
-  // Windows first part like C:
-  if(fullPath.includes("\\")) {
-    current = parts[0] + "\\";
+  // ---------------- WINDOWS ----------------
+  if(isWindows){
+    let drive = parts[0];          // C:
+    let folders = parts.slice(1);
+
+    // ROOT "/"
+    container.innerHTML += `
+      <span onclick="openPath('${drive + "\\\\"}')"
+        class="cursor-pointer text-blue-400 hover:text-blue-200 underline">
+        /
+      </span>
+      ${folders.length ? "<span class='mx-1'>/</span>" : ""}
+    `;
+
+    folders.forEach((part, index) => {
+
+      let absPath = drive + "\\" + folders.slice(0, index+1).join("\\") + "\\";
+
+      container.innerHTML += `
+        <span onclick="openPath('${absPath.replace(/\\/g,'\\\\')}')"
+          class="cursor-pointer text-blue-400 hover:text-blue-200 underline">
+          /${part}
+        </span>
+        ${index < folders.length-1 ? "<span class='mx-1'>/</span>" : ""}
+      `;
+    });
+
+    return;
   }
 
+  // ---------------- LINUX ----------------
+  container.innerHTML += `
+    <span onclick="openPath('/')"
+      class="cursor-pointer text-blue-400 hover:text-blue-200 underline">
+      /
+    </span>
+    ${parts.length ? "<span class='mx-1'>/</span>" : ""}
+  `;
+
   parts.forEach((part, index) => {
-    if(index > 0) current += part + "\\";
+    let current = "/" + parts.slice(0, index+1).join("/");
 
     container.innerHTML += `
       <span onclick="openPath('${current}')"
-        class="cursor-pointer hover:text-white text-blue-400">
-        ${part}
+        class="cursor-pointer text-blue-400 hover:text-blue-200 underline">
+        /${part}
       </span>
-      ${index < parts.length-1 ? "<span>/</span>" : ""}
+      ${index < parts.length-1 ? "<span class='mx-1'>/</span>" : ""}
     `;
   });
 }
+
+
+
+
 
 async function previewFile(path){
   const box = document.getElementById("previewBox");
