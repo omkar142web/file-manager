@@ -134,6 +134,8 @@ async function previewFile(path){
   const box = document.getElementById("previewBox");
   const content = document.getElementById("previewContent");
 
+  document.getElementById("previewTitle").innerText = path.split(/[/\\]+/).pop();
+  
   content.innerHTML = "Loading...";
 
   if(/\.(png|jpg|jpeg|gif|webp)$/i.test(path)){
@@ -203,6 +205,16 @@ function showPrev(){
 }
 
 
+// keyboard
+document.addEventListener("keydown", (e) => {
+  const box = document.getElementById("previewBox");
+
+  if(box.classList.contains("hidden")) return;
+
+  if(e.key === "ArrowRight") showNext();
+  if(e.key === "ArrowLeft") showPrev();
+  if(e.key === "Escape") closePreview();
+});
 
 </script>
 
@@ -213,7 +225,7 @@ function showPrev(){
 
     
     <div class="flex justify-between items-center mb-3">
-        <h2 class="text-xl font-bold">Preview</h2>
+        <h2 id="previewTitle" class="text-xl font-bold truncate max-w-[70%]"></h2>
 
         <div class="flex gap-2">
             
