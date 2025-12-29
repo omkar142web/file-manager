@@ -20,27 +20,91 @@ def list_items():
     page = int(request.args.get("page", 1))
     per_page = 50
 
+    sort = request.args.get("sort", "name")     # name | size | date
+    order = request.args.get("order", "asc")    # asc | desc
+    filter_raw = request.args.get("filter", "")
+    filters = [f.strip() for f in filter_raw.split(",") if f.strip()]
+
+    search_query = request.args.get("search", "").lower()
+
     try:
-        names = os.listdir(path)
-        total = len(names)
-
-        start = (page - 1) * per_page
-        end = start + per_page
-        names = names[start:end]
-
-        items = []
-        for name in names:
+        entries = []
+        for name in os.listdir(path):
             full = os.path.join(path, name)
-            items.append({
+            is_dir = os.path.isdir(full)
+
+            size = os.path.getsize(full) if not is_dir else None
+            try:
+                mtime = os.path.getmtime(full)
+            except:
+                mtime = None
+
+            item = {
                 "name": name,
                 "path": full,
-                "is_dir": os.path.isdir(full),
-                "size": os.path.getsize(full) if os.path.isfile(full) else None
-            })
+                "is_dir": is_dir,
+                "size": size,
+                "date": mtime
+            }
+
+            entries.append(item)
+
+        # ---------- FILTER ----------
+        def matches_filter(item):
+            n = item["name"].lower()
+
+            if search_query and search_query not in n:
+                return False
+
+            if not filters:
+                return True
+
+            exts = {
+                "images": (".png",".jpg",".jpeg",".gif",".webp",".svg"),
+                "videos": (".mp4",".mkv",".webm",".mov",".avi"),
+                "audio": (".mp3",".wav",".m4a"),
+                "pdf": (".pdf",),
+                "documents": (".txt",".log",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".pdf"),
+                "code": (".py",".js",".html",".css",".cpp",".java",".ts",".json"),
+                "zip": (".zip",".rar",".7z")
+            }
+
+            for f in filters:
+                if f in exts and n.endswith(exts[f]):
+                    return True
+
+            return False
+
+
+        entries = [e for e in entries if matches_filter(e)]
+
+        # ---------- SORT ----------
+        folders = [e for e in entries if e["is_dir"]]
+        files = [e for e in entries if not e["is_dir"]]
+
+        key_map = {
+            "name": lambda x: x["name"].lower(),
+            "size": lambda x: (x["size"] or 0),
+            "date": lambda x: (x["date"] or 0),
+        }
+
+        reverse = (order == "desc")
+
+        folders.sort(key=key_map.get(sort, key_map["name"]), reverse=reverse)
+        files.sort(key=key_map.get(sort, key_map["name"]), reverse=reverse)
+
+        # folders first ALWAYS (like Windows Explorer)
+        entries = folders + files
+
+        # ---------- PAGINATION ----------
+        total = len(entries)
+        start = (page - 1) * per_page
+        end = start + per_page
+        page_items = entries[start:end]
 
         return jsonify({
             "path": path,
-            "items": items,
+            "items": page_items,
             "page": page,
             "per_page": per_page,
             "total": total
@@ -48,6 +112,7 @@ def list_items():
 
     except PermissionError:
         return jsonify({"error": "Access denied"}), 403
+
 
 
 @app.route("/delete", methods=["POST"])

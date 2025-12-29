@@ -7,6 +7,46 @@
 <div id="breadcrumb" class="mt-4 text-gray-300 text-sm flex flex-wrap gap-2"></div>
 
 <body class="bg-gray-900 text-white">
+
+
+    <div class="bg-gray-800 p-3 rounded mt-4 flex flex-wrap gap-3">
+
+  <select id="sort" class="text-black p-1 rounded">
+    <option value="name">Sort by Name</option>
+    <option value="size">Sort by Size</option>
+    <option value="date">Sort by Date</option>
+  </select>
+
+  <select id="order" class="text-black p-1 rounded">
+    <option value="asc">Ascending</option>
+    <option value="desc">Descending</option>
+  </select>
+
+    <select id="filter" class="text-black p-1 rounded" multiple size="6">
+    <option value="images">Images</option>
+    <option value="videos">Videos</option>
+    <option value="audio">Audio</option>
+    <option value="documents">Documents</option>
+    <option value="pdf">PDF</option>
+    <option value="code">Code</option>
+    <option value="zip">Archives</option>
+    </select>
+
+
+  <input id="search" placeholder="Search..."
+         class="text-black p-1 rounded"/>
+
+  <button onclick="loadFiles()" 
+          class="bg-blue-500 px-3 py-1 rounded">
+    Apply
+  </button>
+
+</div>
+
+
+
+
+
   <div class="p-6">
     <h1 class="text-3xl font-bold mb-4">PC File Manager 🖥️</h1>
 
@@ -49,7 +89,16 @@ function getIcon(name, isDir){
 async function loadFiles() {
   let path = document.getElementById("path").value;
 
-  const res = await fetch(`/list?path=${encodeURIComponent(path)}&page=${currentPage}`);
+  let sort = document.getElementById("sort").value;
+  let order = document.getElementById("order").value;
+  let filterSelect = document.getElementById("filter");
+  let filters = Array.from(filterSelect.selectedOptions).map(o => o.value).join(",");
+
+  let search = document.getElementById("search").value;
+
+  const res = await fetch(`/list?path=${encodeURIComponent(path)}&page=${currentPage}&sort=${sort}&order=${order}&filter=${filters}&search=${encodeURIComponent(search)}`);
+
+
 
   const data = await res.json();
 
