@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PC File Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<div id="breadcrumb" class="mt-4 text-gray-300 text-sm flex flex-wrap gap-2"></div>
+
+<body class="bg-gray-900 text-white">
+  <div class="p-6">
+    <h1 class="text-3xl font-bold mb-4">PC File Manager 🖥️</h1>
+
+    <div class="bg-gray-800 p-4 rounded-lg shadow">
+      <input id="path" class="w-full p-2 text-black rounded"
+        value="/" placeholder="Enter path">
+      <button onclick="loadFiles()" class="mt-3 px-4 py-2 bg-blue-500 rounded">
+        Open
+      </button>
+    </div>
+
+    <div id="files" class="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+  </div>
+
+<script>
+async function loadFiles() {
+  let path = document.getElementById("path").value;
+
+  const res = await fetch(`/list?path=${encodeURIComponent(path)}`);
+  const data = await res.json();
+
+  let box = document.getElementById("files");
+  box.innerHTML = "";
+
+  if(data.error){
+    box.innerHTML = `<p class='text-red-400'>${data.error}</p>`;
+    return;
+  }
+
+  buildBreadcrumb(data.path);
+
+  data.items.forEach(item => {
+    box.innerHTML += `
+      <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
+        <div onclick="openPath('${item.path.replace(/\\/g,'\\\\')}')" class="cursor-pointer">
+          <p class="font-bold">${item.name}</p>
+          <p class="text-sm text-gray-400">
+            ${item.is_dir ? "📂 Folder" : "📄 File"}
+          </p>
+        </div>
+
+        <button onclick="deleteItem('${item.path.replace(/\\/g,'\\\\')}')"
+          class="mt-2 px-3 py-1 bg-red-500 rounded hover:bg-red-600">
+          Delete
+        </button>
+      </div>`;
+  });
+
+
+  data.items.forEach(item => {
+    box.innerHTML += `
+    <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
+        <div onclick="openPath('${item.path}')" class="cursor-pointer">
+        <p class="font-bold">${item.name}</p>
+        <p class="text-sm text-gray-400">
+            ${item.is_dir ? "📂 Folder" : "📄 File"}
+        </p>
+        </div>
+
+        <button onclick="deleteItem('${item.path}')"
+        class="mt-2 px-3 py-1 bg-red-500 rounded hover:bg-red-600">
+        Delete
+        </button>
+    </div>`;
+    });
+
+}
+
+function openPath(p){
+  document.getElementById("path").value = p;
+  loadFiles();
+}
+
+loadFiles();
+
+async function deleteItem(path){
+  if(!confirm("Are you sure you want to delete?\n" + path)) return;
+
+  const res = await fetch("/delete", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({path})
+  });
+
+  const data = await res.json();
+
+  if(data.status === "deleted"){
+    alert("Deleted successfully");
+    loadFiles();
+  } else {
+    alert(data.error || "Failed to delete");
+  }
+}
+
+function buildBreadcrumb(fullPath){
+  let container = document.getElementById("breadcrumb");
+  container.innerHTML = "";
+
+  let parts = fullPath.split(/[/\\\\]+/).filter(Boolean);
+  let current = "";
+
+  // Windows first part like C:
+  if(fullPath.includes("\\")) {
+    current = parts[0] + "\\";
+  }
+
+  parts.forEach((part, index) => {
+    if(index > 0) current += part + "\\";
+
+    container.innerHTML += `
+      <span onclick="openPath('${current}')"
+        class="cursor-pointer hover:text-white text-blue-400">
+        ${part}
+      </span>
+      ${index < parts.length-1 ? "<span>/</span>" : ""}
+    `;
+  });
+}
+
+</script>
+</body>
+</html>
