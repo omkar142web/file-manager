@@ -22,6 +22,10 @@
   </div>
 
 <script>
+
+let currentList = [];
+let currentIndex = -1;
+
 async function loadFiles() {
   let path = document.getElementById("path").value;
 
@@ -38,26 +42,31 @@ async function loadFiles() {
 
   buildBreadcrumb(data.path);
 
-  data.items.forEach(item => {
+currentList = data.items
+  .filter(i => !i.is_dir)
+  .map(i => i.path.replace(/\\/g,'\\\\'));
+
+    data.items.forEach(item => {
     box.innerHTML += `
-      <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
+        <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
         <div onclick="${item.is_dir 
-            ? `openPath('${item.path.replace(/\\/g,'\\\\')}')` 
-            : `previewFile('${item.path.replace(/\\/g,'\\\\')}')`}" 
+            ? `openPath('${item.path.replace(/\\/g,'\\\\')}')`
+            : `openPreview('${item.path.replace(/\\/g,'\\\\')}')`}" 
             class="cursor-pointer">
 
-          <p class="font-bold">${item.name}</p>
-          <p class="text-sm text-gray-400">
+            <p class="font-bold">${item.name}</p>
+            <p class="text-sm text-gray-400">
             ${item.is_dir ? "📂 Folder" : "📄 File"}
-          </p>
+            </p>
         </div>
 
         <button onclick="deleteItem('${item.path.replace(/\\/g,'\\\\')}')"
-          class="mt-2 px-3 py-1 bg-red-500 rounded hover:bg-red-600">
-          Delete
+            class="mt-2 px-3 py-1 bg-red-500 rounded hover:bg-red-600">
+            Delete
         </button>
-      </div>`;
-  });
+        </div>`;
+    });
+
 
 
 
@@ -89,6 +98,12 @@ async function deleteItem(path){
     alert(data.error || "Failed to delete");
   }
 }
+
+function openPreview(path){
+  currentIndex = currentList.indexOf(path);
+  previewFile(path);
+}
+
 
 function buildBreadcrumb(fullPath){
   let container = document.getElementById("breadcrumb");
@@ -173,6 +188,22 @@ function closePreview(){
   box.classList.add("hidden");
 }
 
+function showNext(){
+  if(currentIndex < currentList.length - 1){
+    currentIndex++;
+    previewFile(currentList[currentIndex]);
+  }
+}
+
+function showPrev(){
+  if(currentIndex > 0){
+    currentIndex--;
+    previewFile(currentList[currentIndex]);
+  }
+}
+
+
+
 </script>
 
 <div id="previewBox"
@@ -182,12 +213,27 @@ function closePreview(){
 
     
     <div class="flex justify-between items-center mb-3">
-      <h2 class="text-xl font-bold">Preview</h2>
-      <button onclick="closePreview()"
-              class="px-3 py-1 bg-red-500 rounded">
-        Close
-      </button>
-    </div>
+        <h2 class="text-xl font-bold">Preview</h2>
+
+        <div class="flex gap-2">
+            
+            <button onclick="showPrev()"
+            class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+            ⬅ Prev
+            </button>
+
+            <button onclick="showNext()"
+            class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+            Next ➡
+            </button>
+
+            <button onclick="closePreview()"
+            class="px-3 py-1 bg-red-500 rounded">
+            Close
+            </button>
+        </div>
+        </div>
+
 
     <div id="previewContent" class="text-white text-sm flex-1 overflow-hidden"></div>
 
