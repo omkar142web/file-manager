@@ -41,7 +41,11 @@ async function loadFiles() {
   data.items.forEach(item => {
     box.innerHTML += `
       <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
-        <div onclick="openPath('${item.path.replace(/\\/g,'\\\\')}')" class="cursor-pointer">
+        <div onclick="${item.is_dir 
+            ? `openPath('${item.path.replace(/\\/g,'\\\\')}')` 
+            : `previewFile('${item.path.replace(/\\/g,'\\\\')}')`}" 
+            class="cursor-pointer">
+
           <p class="font-bold">${item.name}</p>
           <p class="text-sm text-gray-400">
             ${item.is_dir ? "📂 Folder" : "📄 File"}
@@ -56,22 +60,7 @@ async function loadFiles() {
   });
 
 
-  data.items.forEach(item => {
-    box.innerHTML += `
-    <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
-        <div onclick="openPath('${item.path}')" class="cursor-pointer">
-        <p class="font-bold">${item.name}</p>
-        <p class="text-sm text-gray-400">
-            ${item.is_dir ? "📂 Folder" : "📄 File"}
-        </p>
-        </div>
 
-        <button onclick="deleteItem('${item.path}')"
-        class="mt-2 px-3 py-1 bg-red-500 rounded hover:bg-red-600">
-        Delete
-        </button>
-    </div>`;
-    });
 
 }
 
@@ -126,6 +115,50 @@ function buildBreadcrumb(fullPath){
   });
 }
 
+async function previewFile(path){
+  const box = document.getElementById("previewBox");
+  const content = document.getElementById("previewContent");
+
+  content.innerHTML = "Loading...";
+
+  // Image?
+  if(/\.(png|jpg|jpeg|gif|webp)$/i.test(path)){
+    content.innerHTML = `<img src="/preview?path=${encodeURIComponent(path)}"
+                            class="max-h-[90%] mx-auto rounded shadow">`;
+  }
+  else {
+    const res = await fetch(`/preview?path=${encodeURIComponent(path)}`);
+    const text = await res.text();
+    content.innerHTML = `<pre class="whitespace-pre-wrap">${text}</pre>`;
+  }
+
+  box.classList.remove("hidden");
+  box.classList.add("flex");
+}
+
+function closePreview(){
+  const box = document.getElementById("previewBox");
+  box.classList.add("hidden");
+}
+
 </script>
+
+<div id="previewBox"
+     class="fixed inset-0 bg-black/70 hidden items-center justify-center">
+  <div class="bg-gray-900 p-5 rounded-xl w-[80%] h-[80%] overflow-auto">
+    
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-xl font-bold">Preview</h2>
+      <button onclick="closePreview()"
+              class="px-3 py-1 bg-red-500 rounded">
+        Close
+      </button>
+    </div>
+
+    <div id="previewContent" class="text-white text-sm"></div>
+  </div>
+</div>
+
+
 </body>
 </html>

@@ -51,6 +51,30 @@ def delete_item():
         return jsonify({"error": str(e)}), 500
 
 
+from flask import send_file
+@app.route("/preview")
+def preview():
+    path = request.args.get("path")
+
+    if not path or not os.path.exists(path):
+        return "Not Found", 404
+
+    # Image / text preview only for now
+    try:
+        # Images → return directly
+        if any(path.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".gif", ".webp"]):
+            return send_file(path)
+
+        # Text files
+        if any(path.lower().endswith(ext) for ext in [".txt", ".log", ".py", ".json", ".html", ".css", ".js"]):
+            with open(path, "r", errors="ignore") as f:
+                return f.read()
+
+        return "Preview not supported yet", 415
+
+    except PermissionError:
+        return "Access Denied", 403
+
 
 if __name__ == "__main__":
     app.run(debug=True)
