@@ -75,20 +75,40 @@ let currentPage = 1;
 let currentList = [];
 let currentIndex = -1;
 
-function getIcon(name, isDir){
-  if(isDir) return "📁";
+function getThumb(item){
+  const name = item.name.toLowerCase();
 
-  const ext = name.toLowerCase();
+  // IMAGE -> real thumbnail
+  if(/\.(png|jpg|jpeg|gif|webp|svg)$/.test(name)){
+    return `<img src="/preview?path=${encodeURIComponent(item.path)}"
+      class="w-66 h-56 object-cover rounded-lg border border-gray-700 shadow">`;
+  }
 
-  if(/\.(png|jpg|jpeg|gif|webp|svg)$/.test(ext)) return "🖼️";
-  if(/\.(mp4|webm|avi|mov|mkv)$/.test(ext)) return "🎞️";
-  if(/\.(mp3|wav|m4a)$/.test(ext)) return "🎵";
-  if(ext.endsWith(".pdf")) return "📄";
-  if(/\.(zip|rar|7z)$/.test(ext)) return "🗜️";
-  if(/\.(txt|log|md)$/.test(ext)) return "📝";
-  if(/\.(py|js|html|css|json|cpp|java)$/.test(ext)) return "💻";
-  
-  return "📦";   // default
+  // VIDEO -> browser thumbnail (works for mp4/webm)
+  if(/\.(mp4|webm|mov|mkv|avi)$/.test(name)){
+    return `
+      <video class="w-66 h-56 object-cover rounded-lg border border-gray-700 shadow" muted>
+        <source src="/preview?path=${encodeURIComponent(item.path)}">
+      </video>`;
+  }
+
+  // AUDIO
+  if(/\.(mp3|wav|m4a)$/.test(name)){
+    return `<div class="w-66 h-56 rounded bg-blue-500 flex items-center justify-center text-2xl">🎵</div>`;
+  }
+
+  // PDF
+  if(name.endsWith(".pdf")){
+    return `<div class="w-66 h-56 rounded bg-red-500 flex items-center justify-center text-2xl">📄</div>`;
+  }
+
+  // FOLDER
+  if(item.is_dir){
+    return `<div class="w-66 h-56 rounded bg-white-500 flex items-center justify-center text-2xl">📁</div>`;
+  }
+
+  // DEFAULT
+  return `<div class="w-66 h-56 rounded bg-gray-700 flex items-center justify-center text-2xl">📦</div>`;
 }
 
 
@@ -141,7 +161,7 @@ currentList = data.items
   .map(i => i.path.replace(/\\/g,'\\\\'));
 
     data.items.forEach(item => {
-  const icon = getIcon(item.name, item.is_dir);
+  const icon = getThumb(item);
   const escapedPath = item.path.replace(/\\/g,'\\\\');
 
   if(viewMode === "grid"){
@@ -152,7 +172,10 @@ currentList = data.items
             : `openPreview('${escapedPath}')`}" 
           class="cursor-pointer">
 
-          <p class="font-bold break-all whitespace-normal text-center text-lg">${icon}</p>
+          <div class="flex justify-center mb-2">
+        ${icon}
+        </div>
+
           <p class="font-bold break-all whitespace-normal text-center mt-1">${item.name}</p>
 
         </div>
@@ -173,7 +196,8 @@ currentList = data.items
             : `openPreview('${escapedPath}')`}" 
           class="cursor-pointer flex items-center gap-3">
 
-          <span class="text-2xl">${icon}</span>
+          <span>${icon}</span>
+
 
           <div>
             <p class="font-bold break-all whitespace-normal">${item.name}</p>
