@@ -60,12 +60,16 @@
       </button>
     </div>
 
-    <div id="files" class="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-  </div>
+    <div id="files"
+     class="mt-5 gap-4"
+     style="display:grid;"></div>
+    </div>
   
   <div class="flex gap-3 mt-5" id="pager"></div>
 
 <script>
+let viewMode = "grid"; // grid | list
+
 let currentPage = 1;
 
 let currentList = [];
@@ -119,6 +123,12 @@ async function loadFiles() {
   let box = document.getElementById("files");
   box.innerHTML = "";
 
+  if(viewMode === "grid"){
+  box.className = "mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
+} else {
+  box.className = "mt-5 flex flex-col gap-2";
+}
+
   if(data.error){
     box.innerHTML = `<p class='text-red-400'>${data.error}</p>`;
     return;
@@ -131,27 +141,57 @@ currentList = data.items
   .map(i => i.path.replace(/\\/g,'\\\\'));
 
     data.items.forEach(item => {
-    box.innerHTML += `
-        <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
-        <div onclick="${item.is_dir 
-            ? `openPath('${item.path.replace(/\\/g,'\\\\')}')`
-            : `openPreview('${item.path.replace(/\\/g,'\\\\')}')`}" 
-            class="cursor-pointer">
+  const icon = getIcon(item.name, item.is_dir);
+  const escapedPath = item.path.replace(/\\/g,'\\\\');
 
-            <p class="font-bold break-words whitespace-normal">
-                ${getIcon(item.name, item.is_dir)} ${item.name}
-            </p>
-            <p class="text-sm text-gray-400">
-            ${item.is_dir ? "📂 Folder" : "📄 File"}
-            </p>
+  if(viewMode === "grid"){
+    box.innerHTML += `
+      <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
+        <div onclick="${item.is_dir 
+            ? `openPath('${escapedPath}')`
+            : `openPreview('${escapedPath}')`}" 
+          class="cursor-pointer">
+
+          <p class="font-bold break-all whitespace-normal text-center text-lg">${icon}</p>
+          <p class="font-bold break-all whitespace-normal text-center mt-1">${item.name}</p>
+
         </div>
 
-        <button onclick="deleteItem('${item.path.replace(/\\/g,'\\\\')}')"
-            class="mt-2 px-3 py-1 bg-red-500 rounded hover:bg-red-600">
-            Delete
+        <button onclick="deleteItem('${escapedPath}')"
+          class="mt-2 px-3 py-1 bg-red-500 rounded hover:bg-red-600 w-full">
+          Delete
         </button>
-        </div>`;
-    });
+      </div>`;
+  }
+
+  else {
+    box.innerHTML += `
+      <div class="bg-gray-800 p-3 rounded hover:bg-gray-700 flex justify-between items-center">
+
+        <div onclick="${item.is_dir 
+            ? `openPath('${escapedPath}')`
+            : `openPreview('${escapedPath}')`}" 
+          class="cursor-pointer flex items-center gap-3">
+
+          <span class="text-2xl">${icon}</span>
+
+          <div>
+            <p class="font-bold break-all whitespace-normal">${item.name}</p>
+            <p class="text-sm text-gray-400">
+              ${item.is_dir ? "Folder" : "File"}
+            </p>
+          </div>
+        </div>
+
+        <button onclick="deleteItem('${escapedPath}')"
+          class="px-3 py-1 bg-red-500 rounded hover:bg-red-600">
+          Delete
+        </button>
+
+      </div>`;
+  }
+});
+
 
 let pager = document.getElementById("pager");
 pager.innerHTML = "";
@@ -172,6 +212,16 @@ if(data.page < max){
       class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
       Next ➡
     </button>`;
+}
+
+
+function toggleView(){
+  viewMode = viewMode === "grid" ? "list" : "grid";
+
+  document.getElementById("viewToggle").innerText =
+    viewMode === "grid" ? "Switch to List View" : "Switch to Grid View";
+
+  loadFiles();
 }
 
 
