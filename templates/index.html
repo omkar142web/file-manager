@@ -81,34 +81,34 @@ function getThumb(item){
   // IMAGE -> real thumbnail
   if(/\.(png|jpg|jpeg|gif|webp|svg)$/.test(name)){
     return `<img src="/preview?path=${encodeURIComponent(item.path)}"
-      class="w-66 h-56 object-cover rounded-lg border border-gray-700 shadow">`;
+      class="w-64 h-56 object-cover rounded-lg border border-gray-700 shadow">`;
   }
 
   // VIDEO -> browser thumbnail (works for mp4/webm)
   if(/\.(mp4|webm|mov|mkv|avi)$/.test(name)){
     return `
-      <video class="w-66 h-56 object-cover rounded-lg border border-gray-700 shadow" muted>
+      <video class="w-64 h-56 object-cover rounded-lg border border-gray-700 shadow" muted>
         <source src="/preview?path=${encodeURIComponent(item.path)}">
       </video>`;
   }
 
   // AUDIO
   if(/\.(mp3|wav|m4a)$/.test(name)){
-    return `<div class="w-66 h-56 rounded bg-blue-500 flex items-center justify-center text-2xl">🎵</div>`;
+    return `<div class="w-64 h-56 rounded bg-blue-500 flex items-center justify-center text-2xl">🎵</div>`;
   }
 
   // PDF
   if(name.endsWith(".pdf")){
-    return `<div class="w-66 h-56 rounded bg-red-500 flex items-center justify-center text-2xl">📄</div>`;
+    return `<div class="w-64 h-56 rounded bg-red-500 flex items-center justify-center text-2xl">📄</div>`;
   }
 
   // FOLDER
   if(item.is_dir){
-    return `<div class="w-66 h-56 rounded bg-white-500 flex items-center justify-center text-2xl">📁</div>`;
+    return `<div class="w-64 h-56 rounded bg-white-500 flex items-center justify-center text-2xl">📁</div>`;
   }
 
   // DEFAULT
-  return `<div class="w-66 h-56 rounded bg-gray-700 flex items-center justify-center text-2xl">📦</div>`;
+  return `<div class="w-64 h-56 rounded bg-gray-700 flex items-center justify-center text-2xl">📦</div>`;
 }
 
 
@@ -165,26 +165,38 @@ currentList = data.items
   const escapedPath = item.path.replace(/\\/g,'\\\\');
 
   if(viewMode === "grid"){
-    box.innerHTML += `
-      <div class="bg-gray-800 p-3 rounded hover:bg-gray-700">
-        <div onclick="${item.is_dir 
-            ? `openPath('${escapedPath}')`
-            : `openPreview('${escapedPath}')`}" 
-          class="cursor-pointer">
+  box.innerHTML += `
+<div class="bg-gray-800 p-3 rounded hover:bg-gray-700 
+     flex flex-col items-center justify-between h-[300px] cursor-pointer"
+     onclick="${item.is_dir 
+        ? `openPath('${escapedPath}')`
+        : `openPreview('${escapedPath}')`}">
 
-          <div class="flex justify-center mb-2">
-        ${icon}
-        </div>
+  <!-- Thumbnail -->
+  <div class="w-full h-[200px] flex items-center justify-center">
+    <div class="mt-8">
+      ${icon}
+    </div>
+  </div>
 
-          <p class="font-bold break-all whitespace-normal text-center mt-1">${item.name}</p>
 
-        </div>
+  <!-- Title + Trash Row -->
+  <div class="w-full flex items-center justify-between mt-2">
 
-        <button onclick="deleteItem('${escapedPath}')"
-          class="mt-2 px-3 py-1 bg-red-500 rounded hover:bg-red-600 w-full">
-          Delete
-        </button>
-      </div>`;
+      <!-- Filename -->
+      <p class="font-bold text-sm truncate flex-1 mr-2">
+        ${item.name}
+      </p>
+
+      <!-- Trash -->
+      <button onclick="deleteItem('${escapedPath}')"
+        class="px-3 py-1 bg-red-500 rounded hover:bg-red-600">
+        🗑️
+      </button>
+  </div>
+
+</div>`;
+
   }
 
   else {
